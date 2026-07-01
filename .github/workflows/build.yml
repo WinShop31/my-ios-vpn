@@ -18,19 +18,17 @@ jobs:
 
       - name: Bootstrap Application
         run: |
-          # Создаем чистое iOS приложение без внешних Git-зависимостей
+          # Создаем чистый проект
           flutter create --org com.customvpn.app --platforms ios my_vpn_project
           
-          # Переносим всё в корень, чтобы гитхаб не путался в путях
+          # Переносим файлы в корень
           mv my_vpn_project/* .
           mv my_vpn_project/.[^.]* . || true
 
       - name: Inject Network Capabilities
         run: |
-          # Прописываем базовые сетевые пакеты в конфигурацию напрямую
-          echo "  http: ^1.2.0" >> pubspec.yaml
-          echo "  shared_preferences: ^2.2.0" >> pubspec.yaml
-          flutter pub get
+          # Используем официальную команду вместо ручной правки файла
+          flutter pub add http shared_preferences
 
       - name: Configure Pods Architecture
         run: |
@@ -40,7 +38,6 @@ jobs:
 
       - name: Compile Xcode Release Binary
         run: |
-          # Собираем чистое приложение под iPhone без требования платной подписи
           flutter build ios --release --no-codesign
 
       - name: Construct IPA Package
