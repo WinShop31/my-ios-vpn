@@ -18,16 +18,11 @@ jobs:
 
       - name: Bootstrap Application
         run: |
-          # Создаем чистый проект
-          flutter create --org com.customvpn.app --platforms ios my_vpn_project
-          
-          # Переносим файлы в корень
-          mv my_vpn_project/* .
-          mv my_vpn_project/.[^.]* . || true
+          # Создаем проект прямо в текущей корневой папке без перемещений файлов
+          flutter create --org com.customvpn.app --platforms ios --force .
 
       - name: Inject Network Capabilities
         run: |
-          # Используем официальную команду вместо ручной правки файла
           flutter pub add http shared_preferences
 
       - name: Configure Pods Architecture
