@@ -1,0 +1,56 @@
+name: Build Independent iOS App
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - name: Checkout Your Repo
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter Engine
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Bootstrap Application
+        run: |
+          # Создаем чистое iOS приложение без внешних Git-зависимостей
+          flutter create --org com.customvpn.app --platforms ios my_vpn_project
+          
+          # Переносим всё в корень, чтобы гитхаб не путался в путях
+          mv my_vpn_project/* .
+          mv my_vpn_project/.[^.]* . || true
+
+      - name: Inject Network Capabilities
+        run: |
+          # Прописываем базовые сетевые пакеты в конфигурацию напрямую
+          echo "  http: ^1.2.0" >> pubspec.yaml
+          echo "  shared_preferences: ^2.2.0" >> pubspec.yaml
+          flutter pub get
+
+      - name: Configure Pods Architecture
+        run: |
+          cd ios
+          pod install --repo-update
+          cd ..
+
+      - name: Compile Xcode Release Binary
+        run: |
+          # Собираем чистое приложение под iPhone без требования платной подписи
+          flutter build ios --release --no-codesign
+
+      - name: Construct IPA Package
+        run: |
+          mkdir Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r final-app.ipa Payload
+
+      - name: Deliver IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-app-package
+          path: final-app.ipa
